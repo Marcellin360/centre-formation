@@ -1,4 +1,6 @@
-const BASE_URL = '/api';
+// frontend/src/api.js
+
+const BASE_URL = 'http://localhost:5000/api'; // Nampiana ny URL feno an'ny Backend
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
