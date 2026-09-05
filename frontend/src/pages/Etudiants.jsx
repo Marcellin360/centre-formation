@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api';
 import Modal from '../components/Modal';
 
@@ -12,14 +12,28 @@ export default function Etudiants() {
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState('');
 
-  const load = () => {
+  // Namboarina ny load mba hisorohana ny crash raha tsy array ny azo
+  const load = useCallback(() => {
     const q = search ? `?search=${encodeURIComponent(search)}` : '';
-    api.get(`/etudiants${q}`).then(setList).catch((e) => setError(e.message));
-  };
+    api.get(`/etudiants${q}`)
+      .then((res) => {
+        // Fiarovana: raha ny 'res' no array, na ny 'res.data'
+        const data = Array.isArray(res) ? res : (res && Array.isArray(res.data) ? res.data : []);
+        setList(data);
+      })
+      .catch((e) => {
+        console.error("Erreur API:", e);
+        setError("Tsy afaka naka ny lisitry ny mpianatra. Hamarino ny Backend.");
+        setList([]); // Averina ho foana raha misy error mba tsy hi-crash ny .map()
+      });
+  }, [search]);
 
-  useEffect(load, [search]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const openCreate = () => { setForm(empty); setEditingId(null); setShowModal(true); };
+  
   const openEdit = (e) => {
     setForm({ ...empty, ...e, date_naissance: e.date_naissance ? e.date_naissance.slice(0, 10) : '' });
     setEditingId(e.id);
@@ -34,12 +48,19 @@ export default function Etudiants() {
       else await api.post('/etudiants', form);
       setShowModal(false);
       load();
-    } catch (e) { setError(e.message); }
+    } catch (e) { 
+      setError(e.message || "Nisy olana teo am-pandefasana data."); 
+    }
   };
 
   const remove = async (id) => {
     if (!confirm('Supprimer cet étudiant ?')) return;
-    try { await api.del(`/etudiants/${id}`); load(); } catch (e) { setError(e.message); }
+    try { 
+      await api.del(`/etudiants/${id}`); 
+      load(); 
+    } catch (e) { 
+      setError(e.message || "Tsy voafafa ilay mpianatra."); 
+    }
   };
 
   return (
@@ -47,7 +68,7 @@ export default function Etudiants() {
       <header className="page-header">
         <div>
           <h1>Étudiants</h1>
-          <p className="page-sub">{list.length} étudiant(s) enregistré(s)</p>
+          <p className="page-sub">{(Array.isArray(list) ? list.length : 0)} étudiant(s) enregistré(s)</p>
         </div>
         <button className="btn primary" onClick={openCreate}>+ Ajouter un étudiant</button>
       </header>
@@ -66,19 +87,21 @@ export default function Etudiants() {
           <tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Inscrit le</th><th></th></tr>
         </thead>
         <tbody>
-          {list.map((e) => (
-            <tr key={e.id}>
-              <td>{e.prenom} {e.nom}</td>
-              <td>{e.email}</td>
-              <td>{e.telephone || '—'}</td>
-              <td>{e.date_inscription ? new Date(e.date_inscription).toLocaleDateString('fr-FR') : '—'}</td>
-              <td className="row-actions">
-                <button className="btn small" onClick={() => openEdit(e)}>Modifier</button>
-                <button className="btn small danger" onClick={() => remove(e.id)}>Supprimer</button>
-              </td>
-            </tr>
-          ))}
-          {list.length === 0 && (
+          {/* Nasiana fiarovana Array.isArray alohan'ny .map() */}
+          {Array.isArray(list) && list.length > 0 ? (
+            list.map((e) => (
+              <tr key={e.id}>
+                <td>{e.prenom} {e.nom}</td>
+                <td>{e.email}</td>
+                <td>{e.telephone || '—'}</td>
+                <td>{e.date_inscription ? new Date(e.date_inscription).toLocaleDateString('fr-FR') : '—'}</td>
+                <td className="row-actions">
+                  <button className="btn small" onClick={() => openEdit(e)}>Modifier</button>
+                  <button className="btn small danger" onClick={() => remove(e.id)}>Supprimer</button>
+                </td>
+              </tr>
+            ))
+          ) : (
             <tr><td colSpan="5" className="empty-cell">Aucun étudiant trouvé.</td></tr>
           )}
         </tbody>
