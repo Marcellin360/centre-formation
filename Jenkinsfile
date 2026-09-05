@@ -42,19 +42,12 @@ pipeline {
                 bat 'if not exist "C:\\deployed-app" mkdir "C:\\deployed-app"'
                 bat 'xcopy /E /I /Y "backend" "C:\\deployed-app\\backend"'
                 bat 'xcopy /E /I /Y "frontend\\dist" "C:\\deployed-app\\frontend-web"'
+
+                // Fampiasana PM2 ho automatique
+                dir('C:\\deployed-app\\backend') {
+                    // dontKillMe dia mitazona ny PM2 ho velona na dia vita aza ny build
+                    env.BUILD_ID = 'dontKillMe'
+                    bat 'pm2 reload backend-api || pm2 start server.js --name "backend-api"'
+                }
             }
         }
-    }
-
-    post {
-        success {
-            echo "====================================================="
-            echo "PIPELINE NAHOMBAY!"
-            echo "Ny tetikasanao dia efa ao amin'ny C:\\deployed-app"
-            echo "====================================================="
-        }
-        failure {
-            echo "NISY OLANA: Jereo ny Console Output hamantarana ny antony."
-        }
-    }
-}
