@@ -67,7 +67,7 @@ export default function Etudiants() {
     <div>
       <header className="page-header">
         <div>
-          <h1>Étudiants</h1>
+          <h1>Étudiant</h1>
           <p className="page-sub">{(Array.isArray(list) ? list.length : 0)} étudiant(s) enregistré(s)</p>
         </div>
         <button className="btn primary" onClick={openCreate}>+ Ajouter un étudiant</button>
