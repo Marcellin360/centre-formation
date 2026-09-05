@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     tools {
-        // Mampiasa ilay NodeJS nampidirinao tao amin'ny Administrer Jenkins
         nodejs "node20"
     }
 
@@ -46,14 +45,15 @@ pipeline {
                 // 2. Nadika ny Backend
                 bat 'xcopy /E /I /Y "backend" "C:\\deployed-app\\backend"'
                 
-                // 3. Nadika ny Frontend efa vita build (folder 'dist')
+                // 3. Nadika ny Frontend efa vita build
                 bat 'xcopy /E /I /Y "frontend\\dist" "C:\\deployed-app\\frontend-web"'
 
-                // 4. Fikirakirana PM2 ho automatique
+                // 4. Fanavaozana ny PM2
                 dir('C:\\deployed-app\\backend') {
-                    // dontKillMe dia mitazona ny PM2 ho velona na dia vita aza ny build
-                    env.BUILD_ID = 'dontKillMe'
-                    
+                    script {
+                        // Nampidirina ao anaty script block mba tsy hisy error
+                        env.BUILD_ID = 'dontKillMe'
+                    }
                     // Mamelona na manavao ny backend-api
                     bat 'pm2 reload backend-api || pm2 start server.js --name "backend-api"'
                 }
